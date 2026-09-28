@@ -67,4 +67,3 @@ job-tailor-ai/
 
 ---
 
-Built as a continuation of the ChatGPT design session.
