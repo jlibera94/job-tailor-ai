@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JobTailor AI</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <span class="logo-icon">JT</span>
+        <div>
+          <h1>JobTailor AI</h1>
+          <p class="subtitle">Tailor your resume to any job</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Tabs -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="job">Current Job</button>
+      <button class="tab" data-tab="cv">Master CV</button>
+      <button class="tab" data-tab="result">Results</button>
+    </nav>
+
+    <!-- Tab: Current Job -->
+    <section id="tab-job" class="tab-panel active">
+      <div class="card">
+        <div class="card-header">
+          <h2>Job Detected</h2>
+          <button id="btn-scan" class="btn btn-primary btn-sm">Scan Page</button>
+        </div>
+        <div id="job-status" class="status muted">Click “Scan Page” on a job posting.</div>
+        <div id="job-details" class="hidden">
+          <div class="field">
+            <label>Title</label>
+            <div id="job-title" class="value"></div>
+          </div>
+          <div class="field">
+            <label>Company</label>
+            <div id="job-company" class="value"></div>
+          </div>
+          <div class="field">
+            <label>Location</label>
+            <div id="job-location" class="value"></div>
+          </div>
+          <div class="field">
+            <label>Description (excerpt)</label>
+            <div id="job-description" class="value description"></div>
+          </div>
+        </div>
+      </div>
+
+      <button id="btn-generate" class="btn btn-primary btn-full" disabled>
+        Generate Tailored Application
+      </button>
+    </section>
+
+    <!-- Tab: Master CV -->
+    <section id="tab-cv" class="tab-panel">
+      <div class="card">
+        <h2>Master Resume</h2>
+        <p class="hint">Upload your full CV once. The extension will only use information that already exists in it.</p>
+
+        <div id="cv-status" class="status muted">No master CV uploaded yet.</div>
+
+        <div class="upload-zone" id="upload-zone">
+          <input type="file" id="cv-file" accept=".pdf,.docx,.txt" hidden />
+          <button id="btn-upload" class="btn btn-secondary">Choose PDF / DOCX</button>
+          <p class="or">or paste text below</p>
+          <textarea id="cv-text" placeholder="Paste your full resume text here…" rows="10"></textarea>
+          <button id="btn-save-cv" class="btn btn-primary btn-full" style="margin-top: 12px;">
+            Save Master CV
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab: Results -->
+    <section id="tab-result" class="tab-panel">
+      <div id="result-empty" class="status muted">
+        Generate an application from the “Current Job” tab first.
+      </div>
+
+      <div id="result-content" class="hidden">
+        <!-- Match score -->
+        <div class="card score-card">
+          <div class="score-circle">
+            <span id="match-score">–</span>
+            <small>%</small>
+          </div>
+          <div>
+            <h3>Match Score</h3>
+            <p class="hint">Based on demonstrated skills vs job requirements</p>
+          </div>
+        </div>
+
+        <!-- Analysis -->
+        <div class="card">
+          <h2>Requirement Analysis</h2>
+          <div id="analysis-list" class="analysis-list"></div>
+        </div>
+
+        <!-- Tailored Resume Preview -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Tailored Resume</h2>
+            <button id="btn-copy-resume" class="btn btn-ghost btn-sm">Copy</button>
+          </div>
+          <div id="resume-preview" class="preview"></div>
+        </div>
+
+        <!-- Cover Letter -->
+        <div class="card">
+          <div class="card-header">
+            <h2>Cover Letter</h2>
+            <button id="btn-copy-letter" class="btn btn-ghost btn-sm">Copy</button>
+          </div>
+          <div id="letter-preview" class="preview letter"></div>
+        </div>
+
+        <div class="export-row">
+          <button id="btn-export-pdf" class="btn btn-secondary" disabled title="Coming soon">
+            Export PDF
+          </button>
+          <button id="btn-export-docx" class="btn btn-secondary" disabled title="Coming soon">
+            Export DOCX
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <span>MVP · Local only · No data leaves your browser yet</span>
+    </footer>
+  </div>
+
+  <script src="sidepanel.js" type="module"></script>
+</body>
+</html>
