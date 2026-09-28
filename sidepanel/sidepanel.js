@@ -56,8 +56,10 @@ async function parsePdfResume(file) {
     throw new Error("PDF parser is not available.");
   }
 
-  window.pdfjsLib.GlobalWorkerOptions = window.pdfjsLib.GlobalWorkerOptions || {};
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("sidepanel/vendor/pdf.worker.min.js");
+  const workerOptions = window.pdfjsLib.GlobalWorkerOptions || {};
+  workerOptions.workerSrc = chrome.runtime.getURL("sidepanel/vendor/pdf.worker.min.js");
+  window.pdfjsLib.GlobalWorkerOptions = workerOptions;
+
   const bytes = await file.arrayBuffer();
   const pdf = await window.pdfjsLib.getDocument({ data: bytes }).promise;
   let text = "";
