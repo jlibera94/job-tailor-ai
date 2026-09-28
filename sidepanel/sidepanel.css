@@ -161,9 +161,10 @@ body {
 }
 
 .field .description {
-  max-height: 280px;
+  max-height: 320px;
   min-height: 120px;
   overflow-y: auto;
+  overflow-x: hidden;
   font-size: 13px;
   color: var(--text-muted);
   white-space: pre-wrap;
@@ -171,6 +172,7 @@ body {
   padding: 10px;
   border-radius: 6px;
   line-height: 1.6;
+  scrollbar-gutter: stable;
 }
 
 /* Status */
