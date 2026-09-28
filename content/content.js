@@ -19,6 +19,35 @@ function findTextFromSelectors(selectors) {
   return "";
 }
 
+function getMetaContent(...names) {
+  const metaEntries = Array.from(document.querySelectorAll("meta"));
+  const values = [];
+
+  for (const meta of metaEntries) {
+    const property = meta.getAttribute("property") || meta.getAttribute("name") || "";
+    const content = meta.getAttribute("content") || "";
+    if (property && content) values.push({ property, content });
+  }
+
+  for (const name of names) {
+    const match = values.find((entry) => entry.property === name || entry.property === name.replace(/^og:/, ""));
+    if (match && match.content.trim()) return match.content.trim();
+  }
+
+  if (names.includes("title") && document.title) return document.title.trim();
+  return "";
+}
+
+function looksLikeJobTitle(text) {
+  if (!text) return false;
+  const cleaned = text.replace(/\s+/g, " ").trim();
+  if (!cleaned || cleaned.length > 220) return false;
+  if (/^(0\s+notifications|notifications|sign in|learn more|apply now|join our team|menu)$/i.test(cleaned)) {
+    return false;
+  }
+  return /(?:engineer|manager|analyst|developer|designer|architect|specialist|lead|associate|director|consultant|success|product|research|scientist|recruiter|coordinator|advisor)/i.test(cleaned);
+}
+
 function extractLinkedIn() {
   const title =
     findTextFromSelectors([
@@ -138,30 +167,41 @@ function extractIndeed() {
 
 function extractGeneric() {
   // Fallback for company career pages, Greenhouse, Lever, Workday, etc.
+  const metaTitle = getMetaContent("og:title", "twitter:title", "title");
+  const headingTitle = Array.from(document.querySelectorAll("h1, h2, h3, [class*='job-title'], [class*='JobTitle']"))
+    .map((el) => cleanText(el))
+    .find((text) => looksLikeJobTitle(text));
+
   const title =
-    cleanText(document.querySelector("h1")) ||
-    cleanText(document.querySelector("[class*='job-title']")) ||
-    cleanText(document.querySelector("[class*='JobTitle']"));
+    (metaTitle && looksLikeJobTitle(metaTitle) ? metaTitle : "") ||
+    (document.title && looksLikeJobTitle(document.title) ? document.title.split("|")[0].trim() : "") ||
+    headingTitle ||
+    "";
 
   const company =
+    getMetaContent("og:site_name", "twitter:site") ||
     cleanText(document.querySelector("[class*='company']")) ||
-    document.querySelector('meta[property="og:site_name"]')?.content ||
     window.location.hostname.replace("www.", "").split(".")[0];
 
-  // Try to grab the largest text block that looks like a description
+  // Try to grab the largest text block that looks like a description, but skip obvious nav/header noise
   const possibleDesc = Array.from(
-    document.querySelectorAll("div, section, article")
+    document.querySelectorAll("div, section, article, main")
   )
     .map((el) => ({ el, len: cleanText(el).length }))
-    .filter((x) => x.len > 400 && x.len < 15000)
+    .filter((x) => {
+      const text = cleanText(x.el);
+      return text.length > 400 && text.length < 15000 && !/^(0\s+notifications|notifications|sign in)$/i.test(text);
+    })
     .sort((a, b) => b.len - a.len)[0];
+
+  const description = possibleDesc ? cleanText(possibleDesc.el) : "";
 
   return {
     source: "generic",
     title,
     company,
     location: "",
-    description: possibleDesc ? cleanText(possibleDesc.el) : "",
+    description,
     url: window.location.href
   };
 }

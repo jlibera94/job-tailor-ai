@@ -9,6 +9,18 @@
     "sidePanel",
     "scripting"
   ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "sidepanel/vendor/pdf.min.js",
+        "sidepanel/vendor/pdf.worker.min.js",
+        "sidepanel/vendor/mammoth.browser.min.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
   "host_permissions": [
     "https://www.linkedin.com/*",
     "https://www.indeed.com/*",

@@ -80,3 +80,53 @@ test('extractLinkedIn populates title, company, and description for current Link
   assert.equal(job.company, 'Backstory');
   assert.match(job.description, /Senior Technical Success Engineer/i);
 });
+
+test('extractGeneric prefers job metadata over generic nav text', () => {
+  const scriptPath = path.join(__dirname, '..', 'content', 'content.js');
+  const source = fs.readFileSync(scriptPath, 'utf8');
+
+  const navText = { innerText: '0 notifications', textContent: '0 notifications' };
+  const mainBlock = {
+    innerText: 'About the Role Customer Success Manager, Canada (Toronto) ...',
+    textContent: 'About the Role Customer Success Manager, Canada (Toronto) ...'
+  };
+
+  const metaTitle = { getAttribute(attr) { return attr === 'property' ? 'og:title' : attr === 'content' ? 'Customer Success Manager, Canada (Toronto)' : null; } };
+  const metaSite = { getAttribute(attr) { return attr === 'property' ? 'og:site_name' : attr === 'content' ? 'Abnormal AI' : null; } };
+  const selectors = {
+    h1: navText,
+    main: mainBlock,
+    article: mainBlock,
+    div: mainBlock,
+    section: mainBlock,
+    "[role='main']": mainBlock,
+    "[class*='job-title']": null,
+    "[class*='JobTitle']": null,
+  };
+
+  const context = {
+    console,
+    chrome: { runtime: { onMessage: { addListener() {} } } },
+    window: { location: { hostname: 'www.abnormal.ai', href: 'https://www.abnormal.ai/careers/customer-success-manager' } },
+    document: {
+      title: 'Customer Success Manager, Canada (Toronto) | Abnormal AI',
+      body: { innerText: '0 notifications About the Role Customer Success Manager, Canada (Toronto) ...', textContent: '0 notifications About the Role Customer Success Manager, Canada (Toronto) ...' },
+      querySelector(selector) {
+        return selectors[selector] || null;
+      },
+      querySelectorAll(selector) {
+        if (selector === 'meta') return [metaTitle, metaSite];
+        const value = selectors[selector];
+        return value ? [value] : [];
+      }
+    }
+  };
+
+  vm.runInNewContext(source, context);
+
+  const job = context.extractGeneric();
+
+  assert.equal(job.title, 'Customer Success Manager, Canada (Toronto)');
+  assert.equal(job.company, 'Abnormal AI');
+  assert.match(job.description, /Customer Success Manager/i);
+});

@@ -51,7 +51,60 @@ function updateCVStatus() {
   updateGenerateButton();
 }
 
-// ---------- Upload / Save CV ----------
+async function parsePdfResume(file) {
+  if (!window.pdfjsLib) {
+    throw new Error("PDF parser is not available.");
+  }
+
+  window.pdfjsLib.GlobalWorkerOptions = window.pdfjsLib.GlobalWorkerOptions || {};
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc = chrome.runtime.getURL("sidepanel/vendor/pdf.worker.min.js");
+  const bytes = await file.arrayBuffer();
+  const pdf = await window.pdfjsLib.getDocument({ data: bytes }).promise;
+  let text = "";
+
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum += 1) {
+    const page = await pdf.getPage(pageNum);
+    const content = await page.getTextContent();
+    const pageText = content.items.map((item) => item.str).join(" ");
+    text += `${pageText}\n\n`;
+  }
+
+  return text.replace(/\s+/g, " ").trim();
+}
+
+async function parseDocxResume(file) {
+  if (!window.mammoth || typeof window.mammoth.extractRawText !== "function") {
+    throw new Error("DOCX parser is not available.");
+  }
+
+  const bytes = await file.arrayBuffer();
+  const result = await window.mammoth.extractRawText({ arrayBuffer: bytes });
+  return (result.value || "").trim();
+}
+
+async function readResumeFile(file) {
+  const name = file.name?.toLowerCase() || "";
+  const type = file.type || "";
+
+  if (name.endsWith(".txt") || type === "text/plain") {
+    return await file.text();
+  }
+
+  if (name.endsWith(".pdf") || type === "application/pdf") {
+    return await parsePdfResume(file);
+  }
+
+  if (
+    name.endsWith(".docx") ||
+    type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    type === "application/msword"
+  ) {
+    return await parseDocxResume(file);
+  }
+
+  throw new Error("Please upload a .txt, .pdf, or .docx resume file.");
+}
+
 $("#btn-upload").addEventListener("click", () => {
   $("#cv-file").click();
 });
@@ -60,15 +113,11 @@ $("#cv-file").addEventListener("change", async (e) => {
   const file = e.target.files?.[0];
   if (!file) return;
 
-  // For MVP we only support plain text extraction from .txt.
-  // PDF/DOCX parsing will be added later (pdf.js / mammoth).
-  if (file.name.endsWith(".txt") || file.type === "text/plain") {
-    const text = await file.text();
+  try {
+    const text = await readResumeFile(file);
     $("#cv-text").value = text;
-  } else {
-    alert(
-      "For this MVP, please paste the text of your resume into the text box.\n\nFull PDF/DOCX parsing will be added in the next iteration."
-    );
+  } catch (error) {
+    alert(error.message || "Could not read this resume file. Please upload a .txt, .pdf, or .docx file.");
   }
 });
 
