@@ -245,7 +245,6 @@ function renderResults(result) {
     list.appendChild(div);
   });
 
-  // Resume preview
   const resume = result.tailoredResume;
   let resumeHtml = "";
   if (resume) {
@@ -260,11 +259,69 @@ function renderResults(result) {
       resumeHtml += "\n";
     });
   }
-  $("#resume-preview").textContent = resumeHtml.trim();
+  $("#resume-preview").value = resumeHtml.trim();
 
-  // Cover letter
-  $("#letter-preview").textContent = result.coverLetter || "";
+  $("#letter-preview").value = result.coverLetter || "";
+  $("#btn-export-resume-pdf").disabled = !result.tailoredResume;
+  $("#btn-export-letter-pdf").disabled = !result.coverLetter;
+  $("#pdf-preview").style.display = "none";
 }
+
+function generatePdfPreview() {
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    alert("PDF export is not available yet. Please reload the extension and try again.");
+    return;
+  }
+
+  const resumeText = $("#resume-preview").value || "";
+  const letterText = $("#letter-preview").value || "";
+
+  if (!resumeText && !letterText) {
+    return;
+  }
+
+  const doc = new window.jspdf.jsPDF();
+  const combined = [resumeText, "\n\n---\n\n", letterText].filter(Boolean).join("\n\n");
+  const lines = doc.splitTextToSize(combined, 180);
+  doc.text(lines, 14, 16);
+  const pdfBlob = doc.output("blob");
+  const url = URL.createObjectURL(pdfBlob);
+  const iframe = $("#pdf-preview");
+  iframe.src = url;
+  iframe.style.display = "block";
+}
+
+function downloadTextAsPdf(filename, text) {
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    alert("PDF export is not available yet. Please reload the extension and try again.");
+    return;
+  }
+
+  const doc = new window.jspdf.jsPDF();
+  const lines = doc.splitTextToSize(text, 180);
+  doc.text(lines, 14, 16);
+  doc.save(filename);
+}
+
+function attachPdfExportHandlers() {
+  $("#btn-preview-pdf")?.addEventListener("click", () => {
+    generatePdfPreview();
+  });
+
+  $("#btn-export-resume-pdf")?.addEventListener("click", () => {
+    if (!lastResult?.tailoredResume) return;
+    const text = $("#resume-preview").value || "";
+    downloadTextAsPdf("tailored-resume.pdf", text);
+  });
+
+  $("#btn-export-letter-pdf")?.addEventListener("click", () => {
+    if (!lastResult?.coverLetter) return;
+    const text = $("#letter-preview").value || "";
+    downloadTextAsPdf("cover-letter.pdf", text);
+  });
+}
+
+attachPdfExportHandlers();
 
 // ---------- Copy buttons ----------
 $("#btn-copy-resume")?.addEventListener("click", () => {

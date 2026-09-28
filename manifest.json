@@ -14,7 +14,8 @@
       "resources": [
         "sidepanel/vendor/pdf.min.js",
         "sidepanel/vendor/pdf.worker.min.js",
-        "sidepanel/vendor/mammoth.browser.min.js"
+        "sidepanel/vendor/mammoth.browser.min.js",
+        "sidepanel/vendor/jspdf.umd.min.js"
       ],
       "matches": [
         "<all_urls>"

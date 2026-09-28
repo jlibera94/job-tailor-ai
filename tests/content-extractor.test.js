@@ -130,3 +130,39 @@ test('extractGeneric prefers job metadata over generic nav text', () => {
   assert.equal(job.company, 'Abnormal AI');
   assert.match(job.description, /Customer Success Manager/i);
 });
+
+test('handleGenerate keeps multiple relevant experience entries from the resume', async () => {
+  const scriptPath = path.join(__dirname, '..', 'background', 'service-worker.js');
+  const source = fs.readFileSync(scriptPath, 'utf8');
+
+  const context = {
+    console,
+    chrome: {
+      action: { onClicked: { addListener() {} } },
+      sidePanel: { setPanelBehavior() { return Promise.resolve(); } },
+      runtime: { onMessage: { addListener() {} } },
+      tabs: { query() { return Promise.resolve([{ id: 1, url: 'https://www.linkedin.com/jobs/view/123' }]); } },
+      scripting: { executeScript() { return Promise.resolve(); } },
+      storage: { local: { get() {}, set() {} } }
+    },
+    setTimeout,
+    clearTimeout,
+    Promise,
+    URL,
+    Blob
+  };
+
+  vm.runInNewContext(source, context);
+  const result = await context.handleGenerate({
+    job: { title: 'Customer Success Manager', company: 'Abnormal AI', description: 'Customer Success Manager role.' },
+    masterCV: {
+      name: 'John Doe',
+      text: `John Doe\n\nExperience\nSenior Technical Support Specialist — TELUS International\n2021 – Present\n• Supported customers and resolved technical issues\n• Worked cross-functionally with engineering\n\nCustomer Support Lead — Shopify\n2019 – 2021\n• Managed customer relationships\n• Tracked escalations and product feedback` 
+    }
+  });
+
+  assert.ok(Array.isArray(result.tailoredResume.experience));
+  assert.ok(result.tailoredResume.experience.length >= 2);
+  assert.match(result.tailoredResume.experience[0].role, /Support|Technical/i);
+  assert.match(result.tailoredResume.experience[1].role, /Lead|Customer/i);
+});

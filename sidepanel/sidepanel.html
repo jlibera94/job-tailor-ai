@@ -110,7 +110,7 @@
             <h2>Tailored Resume</h2>
             <button id="btn-copy-resume" class="btn btn-ghost btn-sm">Copy</button>
           </div>
-          <div id="resume-preview" class="preview"></div>
+          <textarea id="resume-preview" class="preview editor" rows="18"></textarea>
         </div>
 
         <!-- Cover Letter -->
@@ -119,15 +119,25 @@
             <h2>Cover Letter</h2>
             <button id="btn-copy-letter" class="btn btn-ghost btn-sm">Copy</button>
           </div>
-          <div id="letter-preview" class="preview letter"></div>
+          <textarea id="letter-preview" class="preview editor letter" rows="16"></textarea>
+        </div>
+
+        <div class="card preview-card">
+          <div class="card-header">
+            <h2>PDF Preview</h2>
+          </div>
+          <iframe id="pdf-preview" class="pdf-preview" title="Generated PDF preview"></iframe>
         </div>
 
         <div class="export-row">
-          <button id="btn-export-pdf" class="btn btn-secondary" disabled title="Coming soon">
-            Export PDF
+          <button id="btn-preview-pdf" class="btn btn-secondary">
+            Generate PDF Preview
           </button>
-          <button id="btn-export-docx" class="btn btn-secondary" disabled title="Coming soon">
-            Export DOCX
+          <button id="btn-export-resume-pdf" class="btn btn-secondary">
+            Download Resume PDF
+          </button>
+          <button id="btn-export-letter-pdf" class="btn btn-secondary">
+            Download Cover Letter PDF
           </button>
         </div>
       </div>
@@ -141,6 +151,7 @@
 
   <script src="vendor/pdf.min.js"></script>
   <script src="vendor/mammoth.browser.min.js"></script>
+  <script src="vendor/jspdf.umd.min.js"></script>
   <script src="sidepanel.js" type="module"></script>
 </body>
 </html>
