@@ -6,49 +6,77 @@
 
 function cleanText(el) {
   if (!el) return "";
-  return el.innerText?.replace(/\s+/g, " ").trim() || "";
+  const text = el.innerText || el.textContent || el.getAttribute("aria-label") || "";
+  return String(text).replace(/\s+/g, " ").trim();
+}
+
+function findTextFromSelectors(selectors) {
+  for (const selector of selectors) {
+    const el = document.querySelector(selector);
+    const text = cleanText(el);
+    if (text) return text;
+  }
+  return "";
 }
 
 function extractLinkedIn() {
-  // Title – try several current LinkedIn selectors
   const title =
-    cleanText(document.querySelector(".job-details-jobs-unified-top-card__job-title h1")) ||
-    cleanText(document.querySelector(".job-details-jobs-unified-top-card__job-title")) ||
-    cleanText(document.querySelector("h1.t-24")) ||
-    cleanText(document.querySelector("h1.job-title")) ||
-    cleanText(document.querySelector("h1"));
+    findTextFromSelectors([
+      ".job-details-jobs-unified-top-card__job-title h1",
+      ".job-details-jobs-unified-top-card__job-title",
+      "h1.job-title",
+      "h1.t-24",
+      "h1",
+      "[class*='job-title']",
+      "[class*='jobTitle']",
+      "[data-automation-id*='job-title']"
+    ]) ||
+    Array.from(document.querySelectorAll("h1, h2, [class*='job-title'], [class*='jobTitle']"))
+      .map(cleanText)
+      .find((text) => text && text.length < 200 && !/apply|saved|linkedin/i.test(text)) ||
+    "";
 
-  // Company
   const company =
-    cleanText(document.querySelector(".job-details-jobs-unified-top-card__company-name a")) ||
-    cleanText(document.querySelector(".job-details-jobs-unified-top-card__company-name")) ||
-    cleanText(document.querySelector(".jobs-unified-top-card__company-name a")) ||
-    cleanText(document.querySelector(".jobs-unified-top-card__company-name")) ||
-    cleanText(document.querySelector("a[data-tracking-control-name*='company']"));
+    findTextFromSelectors([
+      ".job-details-jobs-unified-top-card__company-name a",
+      ".job-details-jobs-unified-top-card__company-name",
+      ".jobs-unified-top-card__company-name a",
+      ".jobs-unified-top-card__company-name",
+      "a[data-tracking-control-name*='company']",
+      "[class*='company-name']",
+      "[class*='companyName']",
+      "[data-company-name]"
+    ]) ||
+    document.querySelector('meta[property="og:site_name"]')?.content ||
+    "";
 
-  // Location – often in a secondary line with the company
   const location =
-    cleanText(document.querySelector(".job-details-jobs-unified-top-card__primary-description-container")) ||
-    cleanText(document.querySelector(".job-details-jobs-unified-top-card__bullet")) ||
-    cleanText(document.querySelector(".jobs-unified-top-card__bullet")) ||
-    cleanText(document.querySelector(".tvm__text--low-emphasis"));
+    findTextFromSelectors([
+      ".job-details-jobs-unified-top-card__primary-description-container",
+      ".job-details-jobs-unified-top-card__bullet",
+      ".jobs-unified-top-card__bullet",
+      ".tvm__text--low-emphasis",
+      "[class*='location']",
+      "[data-automation-id*='location']",
+      "[class*='job-location']"
+    ]) ||
+    "";
 
-  // Description – “About the job” section
   const descriptionEl =
     document.querySelector("#job-details") ||
     document.querySelector(".jobs-description__content") ||
     document.querySelector(".jobs-box__html-content") ||
     document.querySelector(".description__text") ||
     document.querySelector(".jobs-description-content__text") ||
-    document.querySelector("[class*='jobs-description']");
+    document.querySelector("[class*='jobs-description']") ||
+    Array.from(document.querySelectorAll("div, article, section, p"))
+      .find((el) => /about the job/i.test(cleanText(el))) ||
+    null;
 
   let description = cleanText(descriptionEl);
 
-  // Fallback: grab the largest text block under “About the job”
   if (!description || description.length < 100) {
-    const aboutHeading = Array.from(document.querySelectorAll("h2, h3")).find(
-      (h) => /about the job/i.test(h.innerText)
-    );
+    const aboutHeading = Array.from(document.querySelectorAll("h2, h3")).find((h) => /about the job/i.test(cleanText(h)));
     if (aboutHeading) {
       let sibling = aboutHeading.nextElementSibling;
       const parts = [];
@@ -58,6 +86,14 @@ function extractLinkedIn() {
         sibling = sibling.nextElementSibling;
       }
       if (parts.length) description = parts.join("\n\n");
+    }
+  }
+
+  if (!description) {
+    const bodyText = cleanText(document.body);
+    const aboutIndex = bodyText.search(/about the job/i);
+    if (aboutIndex >= 0) {
+      description = bodyText.slice(aboutIndex, aboutIndex + 1800).trim();
     }
   }
 
