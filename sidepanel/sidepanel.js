@@ -127,9 +127,7 @@ $("#btn-scan").addEventListener("click", () => {
     $("#job-title").textContent = currentJob.title || "—";
     $("#job-company").textContent = currentJob.company || "—";
     $("#job-location").textContent = currentJob.location || "—";
-    $("#job-description").textContent =
-      (currentJob.description || "").slice(0, 600) +
-      (currentJob.description?.length > 600 ? "…" : "");
+    $("#job-description").textContent = currentJob.description || "";
 
     show($("#job-details"));
     updateGenerateButton();
