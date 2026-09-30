@@ -251,13 +251,7 @@ function renderResults(result) {
     resumeHtml += `<strong>${resume.name || ""}</strong>\n`;
     resumeHtml += `${resume.location || ""} · ${resume.title || ""}\n\n`;
     resumeHtml += `Professional Summary\n${resume.summary || ""}\n\n`;
-    (resume.experience || []).forEach((exp) => {
-      resumeHtml += `${exp.role} — ${exp.company}\n${exp.period}\n`;
-      (exp.bullets || []).forEach((b) => {
-        resumeHtml += `• ${b}\n`;
-      });
-      resumeHtml += "\n";
-    });
+    resumeHtml += `Full Resume\n${resume.originalText || ""}`;
   }
   $("#resume-preview").value = resumeHtml.trim();
 
@@ -265,6 +259,25 @@ function renderResults(result) {
   $("#btn-export-resume-pdf").disabled = !result.tailoredResume;
   $("#btn-export-letter-pdf").disabled = !result.coverLetter;
   $("#pdf-preview").style.display = "none";
+}
+
+function createPdf(text) {
+  const doc = new window.jspdf.jsPDF();
+  const lines = doc.splitTextToSize(text, 180);
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const lineHeight = 6;
+  let y = 16;
+
+  for (const line of lines) {
+    if (y > pageHeight - 14) {
+      doc.addPage();
+      y = 16;
+    }
+    doc.text(line, 14, y);
+    y += lineHeight;
+  }
+
+  return doc;
 }
 
 function generatePdfPreview() {
@@ -280,10 +293,8 @@ function generatePdfPreview() {
     return;
   }
 
-  const doc = new window.jspdf.jsPDF();
   const combined = [resumeText, "\n\n---\n\n", letterText].filter(Boolean).join("\n\n");
-  const lines = doc.splitTextToSize(combined, 180);
-  doc.text(lines, 14, 16);
+  const doc = createPdf(combined);
   const pdfBlob = doc.output("blob");
   const url = URL.createObjectURL(pdfBlob);
   const iframe = $("#pdf-preview");
@@ -297,10 +308,7 @@ function downloadTextAsPdf(filename, text) {
     return;
   }
 
-  const doc = new window.jspdf.jsPDF();
-  const lines = doc.splitTextToSize(text, 180);
-  doc.text(lines, 14, 16);
-  doc.save(filename);
+  createPdf(text).save(filename);
 }
 
 function attachPdfExportHandlers() {
@@ -325,7 +333,7 @@ attachPdfExportHandlers();
 
 // ---------- Copy buttons ----------
 $("#btn-copy-resume")?.addEventListener("click", () => {
-  const text = $("#resume-preview").textContent;
+  const text = $("#resume-preview").value;
   navigator.clipboard.writeText(text).then(() => {
     const btn = $("#btn-copy-resume");
     btn.textContent = "Copied!";
@@ -334,7 +342,7 @@ $("#btn-copy-resume")?.addEventListener("click", () => {
 });
 
 $("#btn-copy-letter")?.addEventListener("click", () => {
-  const text = $("#letter-preview").textContent;
+  const text = $("#letter-preview").value;
   navigator.clipboard.writeText(text).then(() => {
     const btn = $("#btn-copy-letter");
     btn.textContent = "Copied!";

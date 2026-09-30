@@ -131,7 +131,7 @@ test('extractGeneric prefers job metadata over generic nav text', () => {
   assert.match(job.description, /Customer Success Manager/i);
 });
 
-test('handleGenerate keeps multiple relevant experience entries from the resume', async () => {
+test('handleGenerate preserves the complete original resume in the tailored output', async () => {
   const scriptPath = path.join(__dirname, '..', 'background', 'service-worker.js');
   const source = fs.readFileSync(scriptPath, 'utf8');
 
@@ -153,16 +153,17 @@ test('handleGenerate keeps multiple relevant experience entries from the resume'
   };
 
   vm.runInNewContext(source, context);
+  const resumeText = `John Doe\n\nExperience\nSenior Technical Support Specialist — TELUS International\n2021 – Present\n• Supported customers and resolved technical issues\n• Worked cross-functionally with engineering\n\nCustomer Support Lead — Shopify\n2019 – 2021\n• Managed customer relationships\n• Tracked escalations and product feedback`;
   const result = await context.handleGenerate({
     job: { title: 'Customer Success Manager', company: 'Abnormal AI', description: 'Customer Success Manager role.' },
     masterCV: {
       name: 'John Doe',
-      text: `John Doe\n\nExperience\nSenior Technical Support Specialist — TELUS International\n2021 – Present\n• Supported customers and resolved technical issues\n• Worked cross-functionally with engineering\n\nCustomer Support Lead — Shopify\n2019 – 2021\n• Managed customer relationships\n• Tracked escalations and product feedback` 
+      text: resumeText
     }
   });
 
-  assert.ok(Array.isArray(result.tailoredResume.experience));
-  assert.ok(result.tailoredResume.experience.length >= 2);
-  assert.match(result.tailoredResume.experience[0].role, /Support|Technical/i);
-  assert.match(result.tailoredResume.experience[1].role, /Lead|Customer/i);
+  assert.equal(result.tailoredResume.originalText, resumeText);
+  assert.match(result.tailoredResume.originalText, /Senior Technical Support Specialist/);
+  assert.match(result.tailoredResume.originalText, /Customer Support Lead/);
+  assert.match(result.tailoredResume.originalText, /Tracked escalations and product feedback/);
 });

@@ -278,7 +278,8 @@ function buildTailoredResume(job, masterCV) {
     location,
     title: jobTitle,
     summary,
-    experience
+    experience,
+    originalText: masterCV?.text || ""
   };
 }
 
